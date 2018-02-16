@@ -2,6 +2,7 @@ const mysql = require('mysql');
 const inquirer = require('inquirer');
 const Table = require('cli-table');
 const validator = require('validator');
+const clear = require('clear');
 
 const DATABASE = 'bamazon';
 const connection = mysql.createConnection({
@@ -15,7 +16,13 @@ const connection = mysql.createConnection({
 const userRoles = ['Customer','Manager','Supervisor'];
 var shoppingList = [];
 
-const chooseRole = () => {
+connection.connect( error => {
+	if(error){
+		console.log(error);
+	}
+});
+
+/*const chooseRole = () => {
 	inquirer.prompt([{
 		type: 'list',
 		name: 'role',
@@ -24,9 +31,7 @@ const chooseRole = () => {
 	}]).then( response => {
 		switch (response.role){
 			case "Customer":
-				console.log("I'm a customer");
 				showInventory();
-				//goShopping();
 				break;
 			case "Manager":
 				console.log("I'm a manager");
@@ -40,24 +45,19 @@ const chooseRole = () => {
 	}).catch( error => {
 		console.log(error);
 	})
-}
+}*/
 
 const showInventory = () =>{
+	clear();
 	let table = new Table({
 		head: ['ID','Product','Department','Price ($)','Qty In Stock'],
 		colWidths: [10,20,20,20,20]
 	});
-	connection.connect( error => {
-		if(error){
-			console.log(error);
-		}
 
 		connection.query(`SELECT * FROM products`, (error,data) => {
 			if (error){
 				console.log(error);
 			}
-
-			//console.log(data);
 
 			data.forEach( entry => {
 					table.push([
@@ -67,16 +67,14 @@ const showInventory = () =>{
 						entry.item_id.toString());
 				});
 				
-			//connection.end();
 
 			console.log(table.toString());
 			goShopping(shoppingList);
 		})
 
-})}
+}
 
 const goShopping = (list) => {
-	console.log(list);
 	inquirer.prompt([{
 		type: 'list',
 		name: 'itemSelect',
@@ -88,10 +86,13 @@ const goShopping = (list) => {
 		name: 'quantityPurchased',
 		message: 'How many of this item would you like to buy?',
 		validate: (str) => {
-			if (validator.isNumeric(str)){
+			if (validator.isNumeric(str) && parseInt(str) > 0){
 				return true
+			} else if (parseInt(str) === 0){
+				console.log("\nNo such thing as purchasing Zero Items, try again.\n");
+				return false;
 			} else {
-				console.log("\nPlease enter only numbers\n");
+				console.log("\nPlease enter only positive numbers\n");
 				return false;
 			}
 		}
@@ -119,24 +120,23 @@ const cartCheckout = (id,qty) => {
 					entry.item_id,entry.product_name,entry.department_name,entry.price,entry.stock_quantity
 				]);
 			})
-			//console.log(cart.toString());
 			
-			checkout(id,data[0].stock_quantity,parseInt(qty));
+			checkout(id,data[0].stock_quantity,parseInt(qty),data[0].price);
 		} else {
-			console.log(`\nThere's not enough in stock. Please change your quantity.\n`);
+			console.log(`\nInsufficient quantity! Please change your quantity.\n`);
 			goShopping(shoppingList);
 		}
 	})
 }
 
-const checkout = (id,currentQty,purchaseQty) => {
+const checkout = (id,currentQty,purchaseQty,price) => {
 	let newQty = currentQty - purchaseQty;
-
+	let total = purchaseQty * price;
 	connection.query(`UPDATE products SET stock_quantity=? WHERE item_id=?`,[newQty,id],(error,data) => {
 		if(error){
 			console.log(error);
 		}
-		console.log("\nCongrats on your purchase!\n");
+		console.log(`\nCongrats on your purchase! Your total is $${total}\n`);
 		restartFlow();
 	})
 }
@@ -146,14 +146,11 @@ const restartFlow = () => {
 		type: 'list',
 		name: 'action',
 		message: 'What would you like to do?',
-		choices: ['Continue Shopping','Change My Role','Exit']
+		choices: ['Continue Shopping','Exit']
 	}]).then( response => {
 		switch (response.action){
 			case 'Continue Shopping':
-				//
-				break;
-			case 'Change My Role':
-				//
+				showInventory();
 				break;
 			case 'Exit':
 				connection.end();
@@ -164,4 +161,4 @@ const restartFlow = () => {
 	})
 }
 
-chooseRole();
+showInventory();
