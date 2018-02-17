@@ -23,7 +23,7 @@ const forcePromise = (x) => {
 	return new Promise(resolve => {
 		setTimeout(() => {
 			resolve(x);
-		}, 2000);
+		}, 1000 * .5);
 	});
 }
 
@@ -52,10 +52,10 @@ const options = () => {
 				addToInventory();
 				break;
 			case managerChoices[3]:
-				console.log(response.options);
+				addProduct();
 				break;
 			case managerChoices[4]:
-				console.log(`\n${response.options}\n`);
+				console.log(`\nDon\'t call me Mr. Manager, It\'s just Manager... Good-Bye...\n`);
 				connection.end();
 				break; 
 			default:
@@ -130,7 +130,6 @@ const addToInventory = async () => {
 			idList.push(entry.item_id.toString())
 		});
 		console.log(table.toString());
-		console.log(idList);
 	})
 	await forcePromise();
 	
@@ -143,7 +142,7 @@ const addToInventory = async () => {
 	{
 		type: 'input',
 		name: 'qty',
-		message: 'What quantity do you want to update to?',
+		message: 'What is the new quantity of the item?',
 		validate: (str) => {
 			if (validator.isNumeric(str) && parseInt(str) > 0){
 				return true
@@ -162,6 +161,78 @@ const addToInventory = async () => {
 			}
 		})
 		options();
+	})
+}
+
+const addProduct = () => {
+	clear();
+	let table = new Table({
+		head: ['ID','Product','Department','Price ($)','Qty In Stock'],
+		colWidths: [10,20,20,20,20]
+	});
+
+	inquirer.prompt([{
+		type: 'input',
+		name: 'name',
+		message: 'What is the name of the product',
+		validate: (str) => {
+			if (str.length === 0){
+				return false;
+			} else {
+				return true;
+			}
+		}
+	},
+	{
+		type: 'input',
+		name: 'department',
+		message: 'Which department does this item belong to?',
+		validate: (str) => {
+			if (str.length === 0){
+				return false;
+			} else {
+				return true;
+			}
+		}
+	},
+	{
+		type: 'input',
+		name: 'price',
+		message: 'What is the cost per unit (Numbers only)',
+		validate: (str) => {
+			if (validator.isNumeric(str) && parseInt(str) > 0){
+				return true
+			} else if (parseInt(str) === 0){
+				console.log("\nNo such thing as purchasing Zero Items, try again.\n");
+				return false;
+			} else {
+				console.log("\nPlease enter only positive numbers\n");
+				return false;
+			}
+		}
+	},
+	{
+		input: 'input',
+		name: 'quantity',
+		message: 'How many items are in stock?',
+		validate: (str) => {
+			if (validator.isNumeric(str) && parseInt(str) > 0){
+				return true
+			} else if (parseInt(str) === 0){
+				console.log("\nNo such thing as purchasing Zero Items, try again.\n");
+				return false;
+			} else {
+				console.log("\nPlease enter only positive numbers\n");
+				return false;
+			}
+		}
+	}]).then( response => {
+		connection.query('INSERT INTO products VALUES (item_id,?,?,?,?)',[response.name,response.department,response.price,response.quantity],(error,data) => {
+			if (error){
+				console.log(error);
+			}
+			options();
+		})
 	})
 }
 

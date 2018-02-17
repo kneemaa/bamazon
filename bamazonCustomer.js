@@ -12,8 +12,6 @@ const connection = mysql.createConnection({
 	password: 'password',
 	database: DATABASE,
 });
-
-const userRoles = ['Customer','Manager','Supervisor'];
 var shoppingList = [];
 
 connection.connect( error => {
@@ -22,30 +20,6 @@ connection.connect( error => {
 	}
 });
 
-/*const chooseRole = () => {
-	inquirer.prompt([{
-		type: 'list',
-		name: 'role',
-		message: 'Please choose a role',
-		choices: userRoles
-	}]).then( response => {
-		switch (response.role){
-			case "Customer":
-				showInventory();
-				break;
-			case "Manager":
-				console.log("I'm a manager");
-				break;
-			case "Supervisor":
-				console.log("I'm a supervisor");
-				break;
-			default:
-				console.log(`${response.role} is unknown`);
-		}
-	}).catch( error => {
-		console.log(error);
-	})
-}*/
 
 const showInventory = () =>{
 	clear();
