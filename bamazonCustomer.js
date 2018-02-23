@@ -106,7 +106,7 @@ const cartCheckout = (id,qty) => {
 const checkout = (id,currentQty,purchaseQty,price) => {
 	let newQty = currentQty - purchaseQty;
 	let total = purchaseQty * price;
-	connection.query(`UPDATE products SET stock_quantity=? WHERE item_id=?`,[newQty,id],(error,data) => {
+	connection.query(`UPDATE products SET stock_quantity=? AND product_sales=? WHERE item_id=?`,[newQty,total,id],(error,data) => {
 		if(error){
 			console.log(error);
 		}
